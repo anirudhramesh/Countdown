@@ -5,60 +5,35 @@ from multiprocessing import Pool
 from functools import partial
 
 
-def findem(scrambled_word, dictionary, i):
-    valid_word_list = []
-    # for i in range(6, len(scrambled_word)):
-    for c in combinations(scrambled_word, i+1):
-        for p in permutations(c):
-            p = ''.join(p)
-            if dictionary.check(p):
-                valid_word_list.append(p)
-    return valid_word_list
-
-
-def main():
-    letters = 'rilsedxcu'
-    dictionary = Dict('en-US')
-    # pfunc = partial(findem, scrambled_word=letters, dictionary=dictionary)
-
-    start_time = time()
-    pool = Pool(processes=5)
-    valid_word_list = pool.starmap(findem, [(letters, dictionary, j) for j in range(4, len(letters))])
-    pool.close(), pool.join()
-    print('time taken: ', round(time() - start_time, 2), ' seconds.')
-    
-    print(valid_word_list)
-
-
-def findem1(word, dictionary):
+def findem(word, dictionary):
     word = ''.join(word)
     if dictionary.check(word):
         return word
 
 
-def main1():
+def main():
     letters = 'rilsedxcu'
     dictionary = Dict('en-US')
 
     pool = Pool(processes=4)
-    pfunc = partial(findem1, dictionary=dictionary)
+    pfunc = partial(findem, dictionary=dictionary)
 
     x = [combinations(letters, i+1) for i in range(4, len(letters))]
     valid_word_list = []
     for combo in x:
         for combo1 in combo:
-            valid_word_list.append(pool.map_async(pfunc, permutations(combo1)))
+            valid_word_list.append(pool.imap_unordered(pfunc, permutations(combo1)))
 
     pool.close(), pool.join()
 
-    valid_word_list = [v.get() for v in valid_word_list]
-    print(valid_word_list)
+    valid_word_list = [v1 for v in valid_word_list for v1 in v.get() if v1 is not None]
+    # print(valid_word_list)
     pass
 
 
 if __name__ == '__main__':
     start_time = time()
-    main1()
+    main()
     print('time taken: ', round(time() - start_time, 2), ' seconds.')
 
 # my implementation
