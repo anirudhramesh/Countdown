@@ -1,34 +1,27 @@
 from enchant import Dict
 from itertools import combinations, permutations
 from time import time
-from multiprocessing import Pool
+from multiprocessing import Pool, Manager
 from functools import partial
-
-
-def findem(word, dictionary):
-    word = ''.join(word)
-    if dictionary.check(word):
-        return word
 
 
 def main():
     letters = 'rilsedxcu'
     dictionary = Dict('en-US')
 
+    all_length_combinations = [combinations(letters, i+1) for i in range(4, len(letters))]
+    all_words_list = []
+    for single_length_combination in all_length_combinations:
+        for combo in single_length_combination:
+            all_words_list.extend([''.join(p) for p in permutations(combo)])
+
     pool = Pool(processes=4)
-    pfunc = partial(findem, dictionary=dictionary)
-
-    x = [combinations(letters, i+1) for i in range(4, len(letters))]
-    valid_word_list = []
-    for combo in x:
-        for combo1 in combo:
-            valid_word_list.append(pool.imap_unordered(pfunc, permutations(combo1)))
-
+    in_dictionary = pool.map(dictionary.check, all_words_list)
     pool.close(), pool.join()
 
-    valid_word_list = [v1 for v in valid_word_list for v1 in v.get() if v1 is not None]
-    # print(valid_word_list)
-    pass
+    valid_word_list = [word for word, result in zip(all_words_list, in_dictionary) if result == True]
+
+    print(valid_word_list)
 
 
 if __name__ == '__main__':
